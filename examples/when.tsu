@@ -1,0 +1,4 @@
+-- when.tsu
+1 ("FOO" 0) when
+0 ("BAR" 0) when
+print

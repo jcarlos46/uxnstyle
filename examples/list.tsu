@@ -1,0 +1,4 @@
+-- list.tsu
+@main
+  [1 2 3] ps
+halt

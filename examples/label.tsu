@@ -1,0 +1,11 @@
+-- label.tsu
+@label
+  1 2 soma
+ret
+
+@main
+  label 3 + print
+  1 2 soma print
+halt
+
+@soma + ret
