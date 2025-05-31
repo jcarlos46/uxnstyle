@@ -1,5 +1,5 @@
 -- loop.tsu
-10 @loop -- loop label
+1 @loop -- loop label
   dup print
-  1 sub
-dup (loop) when pop
+  1 + 
+dup 10 > (loop) jz

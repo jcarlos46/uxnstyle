@@ -1,0 +1,24 @@
+-- ffi
+@defines
+"VOID"   1 "print" "println" ffi
+
+"NUMBER" 1 "math.rad" "rad" ffi
+"NUMBER" 1 "math.sin" "sin" ffi
+"NUMBER" 1 "math.cos" "cos" ffi
+"NUMBER" 1 "math.tan" "tan" ffi
+
+"NUMBER" 1 "tonumber" "tonumber" ffi
+"STRING" 1 "type" "type?" ffi
+ret
+
+@angulo 30 rad ret
+
+@main
+  defines
+  angulo sin println
+  angulo cos println
+  angulo tan println
+
+  "1" type? println
+  "1" tonumber type? println
+halt

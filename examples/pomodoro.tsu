@@ -1,0 +1,13 @@
+-- pomodoro.tsu
+-- Pomodoro Timer Example
+
+@main -- ( -- )
+  "Pomodoro Timer Example" print
+
+  @pomodoro
+	"Working time!" print
+	2 sleep 
+	"Take break!" print
+	2 sleep 
+  (pomodoro) jmp
+halt

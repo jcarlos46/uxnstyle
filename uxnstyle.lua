@@ -7,6 +7,7 @@ TOKENS = {}
 LABELS = {}
 NAMES = {}
 IP = 1
+JUMP = 0
 
 local Stack = {}
 Stack.__index = Stack
@@ -80,16 +81,15 @@ end
 -- Global stack and dictionary
 local stack = Stack:new()
 
-local code = [[
-]]
-
 local function _print()
     local a = stack:pop()
     print(a)
 end
 NAMES["print"] = _print
 
-local function pop() stack:pop() end
+local function pop() 
+    table.remove(stack.items)
+end
 NAMES["pop"] = pop
 
 local function dup()
@@ -106,6 +106,39 @@ local function sum()
 end
 NAMES["+"] = sum
 
+local function gt()
+    local a = stack:pop()
+    local b = stack:pop()
+    if (b > a) then
+        stack:push(1)
+    else
+        stack:push(0)
+    end
+end
+NAMES[">"] = gt
+
+local function lt()
+    local a = stack:pop()
+    local b = stack:pop()
+    if (b < a) then
+        stack:push(1)
+    else
+        stack:push(0)
+    end
+end
+NAMES["<"] = lt
+
+local function eq()
+    local a = stack:pop()
+    local b = stack:pop()
+    if (b == a) then
+        stack:push(1)
+    else
+        stack:push(0)
+    end
+end
+NAMES["="] = eq
+
 local function sub()
     local b = stack:pop()
     local a = stack:pop()
@@ -113,22 +146,217 @@ local function sub()
 end
 NAMES["sub"] = sub
 
-local function when()
-    local cond = stack:pop()
-    if cond > 0 then
-        IP = TOKENS[IP-1].value
-    end
+local function sum()
+    local b = stack:pop()
+    local a = stack:pop()
+    stack:push(a * b)
 end
-NAMES["when"] = when
+NAMES["*"] = sum
 
-local function ret() IP = table.remove(STASH) end
+local function mod()
+    local b = stack:pop()
+    local a = stack:pop()
+    stack:push(a % b)
+end
+NAMES["mod"] = mod
+
+local function div()
+    local b = stack:pop()
+    local a = stack:pop()
+    stack:push(math.floor(a / b))
+end
+NAMES["/"] = div
+
+local function ret() 
+    IP = table.remove(STASH)
+end
 NAMES["ret"] = ret
 
 local function halt() IP = #TOKENS + 1 end
 NAMES["halt"] = halt
 
+local function sth()
+    local a = stack:pop()
+    table.insert(STASH, a)
+end
+NAMES["sth"] = sth
+
+local function sthr()
+    local a = table.remove(STASH)
+    if a == nil then
+        error("STHR: Stack underflow")
+    end
+    stack:push(a)
+end
+NAMES["sthr"] = sthr
+
+local function jz() 
+    local cond  = stack:pop()
+    local label = TOKENS[IP-1]
+    if cond == 0 then 
+        IP = LABELS[label.value]
+    end 
+end
+NAMES["jz"] = jz
+
+local function jnz() 
+    local cond  = stack:pop()
+    local label = TOKENS[IP-1]
+    if cond ~= 0 then 
+        IP = LABELS[label.value]
+    end 
+end
+NAMES["jnz"] = jnz
+
+local function jmp() 
+    local label = TOKENS[IP-1]
+    IP = LABELS[label.value]
+end
+NAMES["jmp"] = jmp
+
 local function ps() print(stack:tostring()) end
 NAMES["ps"] = ps
+
+-- Stack manipulation
+NAMES["dup"] = function()
+    local a = stack:peek()
+    if a == nil then
+        error("Stack empty")
+    end
+    stack:push(a)
+end
+
+NAMES["drop"] = function()
+    stack:pop()
+end
+
+NAMES["swap"] = function()
+    local b = stack:pop()
+    local a = stack:pop()
+    stack:push(b)
+    stack:push(a)
+end
+
+NAMES["rot"] = function()
+    local c = stack:pop()
+    local b = stack:pop()
+    local a = stack:pop()
+    stack:push(b)
+    stack:push(c)
+    stack:push(a)
+end
+
+local function over()
+    local b = stack:pop()
+    local a = stack:pop()
+    stack:push(a)
+    stack:push(b)
+    stack:push(a)
+end
+NAMES["over"] = over
+
+
+local function ffi()
+    local alias = stack:pop()
+    if type(alias) ~= "string" then
+        error("FFI: Expected STRING for alias, but got " .. type(alias))
+	end
+    local lua_func = stack:pop()
+    if type(lua_func) ~= "string" then
+        error("FFI: Expected STRING for function name, but got " .. type(alias))
+	end
+    local args_count = stack:pop()
+    if tonumber(args_count) == false then
+		error("FFI: Expexted NUMBER for argument count, but got " .. type(args_count))
+	end
+    local return_type = stack:pop()
+    if type(return_type) ~= "string" then
+		error("FFI: Expexted STRIN for return, but got " .. type(return_type))
+	end
+    -- Resolve a função Lua, incluindo namespaces
+    local function resolve_function(path)
+        local parts = {}
+        for part in string.gmatch(path, "[^%.]+") do
+            table.insert(parts, part)
+        end
+
+        local func = _G
+        for _, part in ipairs(parts) do
+            func = func[part]
+            if not func then break end
+        end
+        return func
+    end
+
+    local resolved_func = resolve_function(lua_func)
+    assert(type(resolved_func) == "function", "FFI: " .. lua_func .. " is not a valid function")
+
+    -- Registra a função no ambiente da linguagem
+    NAMES[alias] = function()
+        local args = {}
+        for i = 1, args_count do
+            local arg = stack:pop()
+            table.insert(args, arg) -- Insere em ordem reversa para corresponder ao comportamento da pilha
+        end
+
+        local unpack = table.unpack or unpack
+        local result = resolved_func(unpack(args))
+        if return_type ~= "VOID" then
+            stack:push(result)
+        end
+    end
+end
+NAMES["ffi"] = ffi
+
+NAMES["cons"] = function() -- add element to front of list
+    local list = stack:pop()
+    local element = stack:pop()
+    if type(list) ~= "table" then
+        error("cons requires a list")
+    end
+    table.insert(list, 1, element) 
+    stack:push(list)
+end
+
+NAMES["uncons"] = function() -- remove first element from list
+    local list = stack:pop()
+    if type(list) ~= "table" then
+        error("uncons requires a list")
+    end
+    if #list == 0 then
+        error("uncons on empty list")
+    end
+    local first = list[1]
+    local rest = {}
+    for i = 2, #list do
+        table.insert(rest, list[i])
+    end
+    stack:push(rest)
+    stack:push(first)
+end
+
+NAMES["join"] = function()
+    local sep = stack:pop()
+    local list = stack:pop()
+    if type(sep) ~= "string" or type(list) ~= "table" then
+        error("join requires a list and a separator string")
+    end
+    local str_items = {}
+    for _, v in ipairs(list) do
+        table.insert(str_items, tostring(v))
+    end
+    stack:push(table.concat(str_items, sep))
+end
+
+local function sleep()
+    local seconds = stack:pop()
+    if type(seconds) ~= "number" then
+        error("sleep espera um número de segundos")
+    end
+    local t0 = os.clock()
+    while os.clock() - t0 < seconds do end
+end
+NAMES["sleep"] = sleep
 
 local function import_file(filename)
     local file, err = io.open(filename, "r")
@@ -176,7 +404,8 @@ local function eval(token)
         stack:push(list)
     elseif token.type == "NAME" then
         if LABELS[token.value] then
-            table.insert(STASH, IP)
+            if JUMP == 0 then table.insert(STASH, IP) end
+            JUMP = 0
             IP = LABELS[token.value]
         elseif NAMES[token.value] then
             if type(NAMES[token.value]) == "function" then
@@ -209,6 +438,7 @@ end
 
 if LABELS["main"] then IP = LABELS["main"] end
 while IP <= #TOKENS do
-    eval(TOKENS[IP])
+    local token = TOKENS[IP]
+    eval(token)
     IP = IP + 1
 end
