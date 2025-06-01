@@ -1,0 +1,5 @@
+-- read.tsu
+
+"FOO" print
+read ps print
+"BAR" print

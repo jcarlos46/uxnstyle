@@ -8,6 +8,9 @@ LABELS = {}
 NAMES = {}
 IP = 1
 JUMP = 0
+INCALL = false
+DEBUG = false
+CLI = false
 
 local Stack = {}
 Stack.__index = Stack
@@ -167,7 +170,7 @@ local function div()
 end
 NAMES["/"] = div
 
-local function ret() 
+local function ret()
     IP = table.remove(STASH)
 end
 NAMES["ret"] = ret
@@ -190,32 +193,41 @@ local function sthr()
 end
 NAMES["sthr"] = sthr
 
-local function jz() 
+local function jz()
+    local label = stack:pop()
+    assert(LABELS[label] ~= nil, "JMP: label "..label.." not found")
     local cond  = stack:pop()
-    local label = TOKENS[IP-1]
     if cond == 0 then 
-        IP = LABELS[label.value]
+        IP = LABELS[label]
     end 
 end
 NAMES["jz"] = jz
 
-local function jnz() 
+local function jnz()
+    local label = stack:pop()
+    assert(LABELS[label] ~= nil, "JMP: label "..label.." not found")
     local cond  = stack:pop()
-    local label = TOKENS[IP-1]
     if cond ~= 0 then 
-        IP = LABELS[label.value]
-    end 
+        IP = LABELS[label]
+    end
 end
 NAMES["jnz"] = jnz
 
-local function jmp() 
-    local label = TOKENS[IP-1]
-    IP = LABELS[label.value]
+local function jmp()
+    local label = stack:pop()
+    assert(LABELS[label] ~= nil, "JMP: label "..label.." not found")
+    IP = LABELS[label]
 end
 NAMES["jmp"] = jmp
 
 local function ps() print(stack:tostring()) end
 NAMES["ps"] = ps
+
+local function debug() DEBUG=true end
+NAMES["debug"] = debug
+
+local function cli() CLI=true end
+NAMES["cli"] = cli
 
 -- Stack manipulation
 NAMES["dup"] = function()
@@ -255,6 +267,26 @@ local function over()
 end
 NAMES["over"] = over
 
+-- String manipulation
+local function trim()
+    local s = stack:pop()
+    s = s:match("^%s*(.-)%s*$")
+    stack:push(s)
+end
+NAMES["trim"] = trim
+
+local function apply()
+    local code = stack:pop()
+    local last_IP = #TOKENS
+    INCALL = true
+    local tokens = lexer.tokenize(code)
+    for _, t in ipairs(tokens) do
+        table.insert(TOKENS, t)
+    end
+    table.insert(STASH, IP+1)
+    IP = last_IP
+end
+NAMES["apply"] = apply
 
 local function ffi()
     local alias = stack:pop()
@@ -308,6 +340,12 @@ local function ffi()
 end
 NAMES["ffi"] = ffi
 
+local function read()
+    local a = io.read()
+    stack:push(a)
+end
+NAMES["read"] = read
+
 NAMES["cons"] = function() -- add element to front of list
     local list = stack:pop()
     local element = stack:pop()
@@ -358,6 +396,14 @@ local function sleep()
 end
 NAMES["sleep"] = sleep
 
+local function print_error(msg)
+    if CLI then
+        print(msg)
+    else
+        error(msg)
+    end
+end
+
 local function import_file(filename)
     local file, err = io.open(filename, "r")
     if not file then
@@ -377,24 +423,7 @@ end
 local function eval(token)
     if token.ignore then
         if token.value == "while" then token.ignore = false end
-    elseif token.type == "PAR_OPEN" then
-        local _stack = {IP}
-        local depth = 1
-        IP = IP + 1
-        while depth > 0 and IP < #TOKENS do
-            if TOKENS[IP].type == "PAR_OPEN" then
-                depth = depth + 1
-                _stack[#_stack + 1] = IP
-            elseif TOKENS[IP].type == "PAR_CLOSE" then
-                depth = depth - 1
-                local open_par_ip = table.remove(_stack)
-                TOKENS[IP].value = open_par_ip
-                TOKENS[open_par_ip].value = IP
-            end
-            IP = IP + 1
-        end
-        IP = IP - 1
-    elseif token.type == "NUMBER" or token.type == "STRING" then
+    elseif token.type == "NUMBER" or token.type == "STRING" or token.type == "QUOTE" then
         stack:push(token.value)
     elseif token.type == "LIST" then
         local list = {}
@@ -411,10 +440,11 @@ local function eval(token)
             if type(NAMES[token.value]) == "function" then
                 NAMES[token.value]()
             else
+                NAMES[token.value]()
                 stack:push(NAMES[token.value])
             end
         else
-            error("NAME not found: " .. token.value)
+            print_error("NAME not found: " .. token.value)
         end
     end
 end
@@ -439,6 +469,10 @@ end
 if LABELS["main"] then IP = LABELS["main"] end
 while IP <= #TOKENS do
     local token = TOKENS[IP]
+    if DEBUG then print("TOKEN: "..token.value) end
     eval(token)
     IP = IP + 1
+    if IP > #TOKENS and INCALL then
+        IP = table.remove(STASH)
+    end
 end

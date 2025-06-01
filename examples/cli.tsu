@@ -1,0 +1,31 @@
+-- cli.tsu
+
+@defines
+  -- debug
+  cli
+  "STRING" 0 "io.read" (read) ffi
+  "VOID" 1 "io.write" (write) ffi
+  "VOID" 0 "os.exit" (my-halt) ffi
+  "VOID" 1 "os.execute" (execute) ffi
+ret
+
+@main
+  defines
+  @main-welcome
+    "welcome to cli ('exit' to quit)" print
+  @main-start
+    ">> " write
+    read trim
+    dup "" = (main-start) jnz
+    dup "exit" = (exit) jnz
+    dup "cls" = (do-cls) jnz
+    apply -- execute command
+  (main-start) jmp
+
+@do-cls
+  "clear" execute
+  (main-welcome) jmp
+
+@exit
+  "cli: Goobye!" print
+  my-halt
