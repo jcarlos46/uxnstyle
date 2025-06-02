@@ -1,0 +1,8 @@
+--strings.tsu
+debug
+(STRING) 1 (string.char) (ascii) ffi
+(STRING) 1 (io.write)    (write) ffi
+
+"Hello" -- [72 101 108 108 111 00]
+uncons ascii write -- "H"
+10 ascii write -- "new line"

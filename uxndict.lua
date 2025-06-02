@@ -94,12 +94,6 @@ NAMES = {}
 CLI = false
 DEBUG = false
 
-local function _print()
-    local a = M.stack:pop()
-    print(a)
-end
-NAMES["print"] = _print
-
 local function pop() 
     table.remove(stack.items)
 end
@@ -224,14 +218,7 @@ local function over()
 end
 NAMES["over"] = over
 
--- String manipulation
-local function trim()
-    local s = stack:pop()
-    s = s:match("^%s*(.-)%s*$")
-    stack:push(s)
-end
-NAMES["trim"] = trim
-
+-- FFI
 local function ffi()
     local alias = M.stack:pop()
     if type(alias) ~= "string" then
@@ -265,8 +252,8 @@ local function ffi()
     end
 
     local resolved_func = resolve_function(lua_func)
-    if type(resolved_func) == "function" then
-        print_error(lua_func.. "is not a valid funciton")
+    if type(resolved_func) ~= "function" then
+        print_error(lua_func.. " is not a valid funciton")
     end
 
     -- Registra a função no ambiente da linguagem

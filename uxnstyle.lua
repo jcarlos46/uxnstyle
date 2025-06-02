@@ -78,8 +78,19 @@ end
 local function eval(token)
     if token.ignore then
         if token.value == "while" then token.ignore = false end
-    elseif token.type == "NUMBER" or token.type == "STRING" or token.type == "QUOTE" then
+    elseif token.type == "NUMBER" or token.type == "QUOTE" then
         dict.stack:push(token.value)
+    elseif token.type == "STRING" then
+        local i = 1
+        local list = {}
+        while i <= #token.value do
+            local c = token.value:sub(i, i)
+            c = string.byte(c)
+            table.insert(list, c)
+            i = i + 1
+        end
+        table.insert(list, 0)
+        dict.stack:push(list)
     elseif token.type == "LIST" then
         local list = {}
         for _, v in ipairs(token.value) do
@@ -126,6 +137,7 @@ if dict.LABELS["main"] then IP = dict.LABELS["main"] end
 while IP <= #dict.TOKENS do
     local token = dict.TOKENS[IP]
     if dict.DEBUG then
+        io.write("WS: ") dict.NAMES['ps']()
         print(IP .. ":"..token.value.." line: "..token.line.." column: ".. token.column)
     end
     dict.LAST_TOKEN_NAME = token.value
