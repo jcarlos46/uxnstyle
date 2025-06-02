@@ -18,8 +18,8 @@ local function trim(s)
     return s:match("^%s*(.-)%s*$")
 end
 
-local function return_token(_type, expr)
-    return { type=_type, value=expr }
+local function return_token(_type, val, line_c, col_c)
+    return { type=_type, value=val, line=line_c, column=col_c}
 end
 
 -- Função split simples para comentários "--"
@@ -112,12 +112,17 @@ end
 -- Função principal de tokenização
 function M.tokenize(input)
     local result = {}
+    local line_count = 0
+    local column_count = 0
     input = tostring(input)
 
-    for line in input:gmatch("[^\n]+") do
+    for line in input:gmatch("([^\n]*)\n?") do
+    --for line in input:gmatch("[^\n]+") do
         -- Processa comentários
         local _line = trim(line)
         local result_line = {}
+        line_count = line_count + 1
+        column_count = 0
 
         if line:sub(1, 2) ~= "--" then
             -- Se não é um comentário completo, separa por "--"
@@ -133,26 +138,19 @@ function M.tokenize(input)
 
             if c == "(" then
                 -- Agrupa tudo até o parêntese fechando como QUOTE
-                local depth = 1
                 local quoted = ""
                 i = i + 1
-                while i <= #line and depth > 0 do
+                while i <= #line do
                     local ch = line:sub(i, i)
-                    if ch == "(" then
-                        depth = depth + 1
-                    elseif ch == ")" then
-                        depth = depth - 1
-                        if depth == 0 then
-                            i = i + 1
-                            break
-                        end
-                    end
-                    if depth > 0 then
-                        quoted = quoted .. ch
+                    if ch == ")" then
                         i = i + 1
+                        break
                     end
+                    i = i + 1
+                    quoted = quoted .. ch
                 end
-                table.insert(result, { type = "QUOTE", value = quoted })
+                column_count = column_count + 1
+                table.insert(result, return_token("QUOTE", quoted, line_count, column_count))
 
             elseif c == "[" then
                 -- Lista entre colchetes
@@ -173,7 +171,8 @@ function M.tokenize(input)
                     list = list .. ch
                     i = i + 1
                 end
-                table.insert(result, M.parse_list(return_token("LIST", list)))
+                column_count = column_count + 1
+                table.insert(result, return_token("LIST", list, line_count, column_count))
 
             elseif c == "\"" then
                 -- String entre aspas
@@ -198,7 +197,8 @@ function M.tokenize(input)
                         i = i + 1
                     end
                 end
-                table.insert(result, return_token("STRING", tostring(str)))
+                column_count = column_count + 1
+                table.insert(result, return_token("STRING", tostring(str), line_count, column_count))
 
             elseif c:match("%s") then
                 i = i + 1 -- Ignorar espaços
@@ -212,13 +212,17 @@ function M.tokenize(input)
                 end
                 if token ~= "" then
                     if is_number(token) then
-                        table.insert(result, return_token("NUMBER", tonumber(token)))
+                        column_count = column_count + 1
+                        table.insert(result, return_token("NUMBER", tonumber(token), line_count, column_count))
                     elseif is_label(token) then
-                        table.insert(result, return_token("LABEL", token))
+                        column_count = column_count + 1
+                        table.insert(result, return_token("LABEL", tostring(token), line_count, column_count))
                     elseif is_name(token) then
-                        table.insert(result, return_token("NAME", tostring(token)))
+                        column_count = column_count + 1
+                        table.insert(result, return_token("NAME", tostring(token), line_count, column_count))
                     else
-                        table.insert(result, return_token("UNKNOWN", token))
+                        column_count = column_count + 1
+                        table.insert(result, return_token("UNKNOWN", token, line_count, column_count))
                     end
                 end
             end
