@@ -1,5 +1,5 @@
 -- ffi
-@println"print" 1 "VOID" ffi ret
+@println "print" 1 "VOID" ffi ret
 
 @rad "math.rad" 1 "NUMBER" ffi ret
 @sin "math.sin" 1 "NUMBER" ffi ret
