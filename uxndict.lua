@@ -58,11 +58,11 @@ function Stack:tostring()
     for i, v in ipairs(self.items) do
         if i > 1 then result = result .. " " end
         if type(v) == "string" then
-            result = result .. '"' .. v .. '"'
+            result = result .. v
         elseif type(v) == "table" then
             result = result .. format_list(v)
         else
-            result = result .. tostring(v)
+            result = result .. string.format("%X", v)
         end
     end
     return result .. "]"
@@ -218,24 +218,69 @@ local function over()
 end
 NAMES["over"] = over
 
+local function utf8decode(s)
+    local b = string.byte
+    local c1 = b(s, 1)
+    if c1 < 0x80 then
+        return c1
+    elseif c1 < 0xE0 then
+        local c2 = b(s, 2)
+        return ((c1 - 0xC0) * 0x40) + (c2 - 0x80)
+    elseif c1 < 0xF0 then
+        local c2, c3 = b(s, 2), b(s, 3)
+        return ((c1 - 0xE0) * 0x1000) + ((c2 - 0x80) * 0x40) + (c3 - 0x80)
+    elseif c1 < 0xF8 then
+        local c2, c3, c4 = b(s, 2), b(s, 3), b(s, 4)
+        return ((c1 - 0xF0) * 0x40000) + ((c2 - 0x80) * 0x1000) +
+               ((c3 - 0x80) * 0x40) + (c4 - 0x80)
+    end
+end
+
+local function utf8encode(codepoint)
+    if codepoint <= 0x7F then
+        return string.char(codepoint)
+    elseif codepoint <= 0x7FF then
+        return string.char(
+            0xC0 + math.floor(codepoint / 0x40),
+            0x80 + (codepoint % 0x40)
+        )
+    elseif codepoint <= 0xFFFF then
+        return string.char(
+            0xE0 + math.floor(codepoint / 0x1000),
+            0x80 + (math.floor(codepoint / 0x40) % 0x40),
+            0x80 + (codepoint % 0x40)
+        )
+    elseif codepoint <= 0x10FFFF then
+        return string.char(
+            0xF0 + math.floor(codepoint / 0x40000),
+            0x80 + (math.floor(codepoint / 0x1000) % 0x40),
+            0x80 + (math.floor(codepoint / 0x40) % 0x40),
+            0x80 + (codepoint % 0x40)
+        )
+    else
+        error("Código Unicode inválido: " .. tostring(codepoint))
+    end
+end
+
 -- FFI
 local function ffi()
-    local alias = M.stack:pop()
-    if type(alias) ~= "string" then
-		print_error_type("STRING", type(alias))
-	end
-    local lua_func = M.stack:pop()
-    if type(lua_func) ~= "string" then
-		print_error_type("STRING", type(lua_func))
-	end
-    local args_count = M.stack:pop()
-    if tonumber(args_count) == false then
-		print_error_type("NUMBER", type(args_count))
-	end
+    local function utf8fromlist(list)
+        local result = {}
+        for _, codepoint in ipairs(list) do
+            table.insert(result, utf8encode(codepoint))
+        end
+        return table.concat(result)
+    end
+
     local return_type = M.stack:pop()
-    if type(return_type) ~= "string" then
-		print_error_type("STRING", type(return_type))
-	end
+    return_type = utf8fromlist(return_type)
+    
+    local args_count = M.stack:pop()
+    args_count = args_count
+
+    local lua_func = M.stack:pop()
+    lua_func = utf8fromlist(lua_func)
+
     -- Resolve a função Lua, incluindo namespaces
     local function resolve_function(path)
         local parts = {}
@@ -256,20 +301,19 @@ local function ffi()
         print_error(lua_func.. " is not a valid funciton")
     end
 
-    -- Registra a função no ambiente da linguagem
-    NAMES[alias] = function()
-        local args = {}
-        for i = 1, args_count do
-            local arg = stack:pop()
-             -- Insere em ordem reversa para corresponder ao comportamento da pilha
-            table.insert(args, arg)
+    local args = {}
+    for i = 1, args_count do
+        local arg = stack:pop()
+        if type(arg) == "table" then
+            arg = utf8fromlist(arg)
         end
+        table.insert(args, arg)
+    end
 
-        local unpack = table.unpack or unpack
-        local result = resolved_func(unpack(args))
-        if return_type ~= "VOID" then
-            stack:push(result)
-        end
+    local unpack = table.unpack or unpack
+    local result = resolved_func(unpack(args))
+    if return_type ~= "VOID" then
+        stack:push(result)
     end
 end
 NAMES["ffi"] = ffi
@@ -284,7 +328,7 @@ NAMES["cons"] = function() -- add element to front of list
     local list = stack:pop()
     local element = stack:pop()
     if type(list) ~= "table" then
-        print_error_type("LIST", type(seconds))
+        print_error_type("LIST", type(list))
     end
     table.insert(list, 1, element) 
     stack:push(list)
@@ -307,6 +351,32 @@ NAMES["uncons"] = function() -- remove first element from list
     stack:push(first)
 end
 
+NAMES["empty?"] = function()
+    local list = stack:peek()
+    if type(list) ~= "table" then
+        print_error_type("LIST", type(list))
+    end
+    if #list == 0 then 
+        stack:push(1)
+    else 
+        stack:push(0)
+    end
+end
+
+NAMES["store"] = function()
+    local index = stack:pop()
+    if type(index) ~= "number" then print_error_type("NUMBER", type(index)) end
+    local value = stack:pop()
+    NAMES[index] = value
+end
+
+NAMES["load"] = function()
+    local index = stack:pop()
+    if type(index) ~= "number" then print_error_type("NUMBER", type(index)) end
+    if NAMES[index] == nil then print_error("Index "..index.." does not exist") return end
+    stack:push(NAMES[index])
+end
+
 local function sleep()
     local seconds = stack:pop()
     if type(seconds) ~= "number" then
@@ -322,5 +392,7 @@ M.DEBUG = DEBUG
 M.LABELS = LABELS
 M.NAMES = NAMES
 M.stack = stack
+M.utf8decode = utf8decode
+M.print_error = print_error
 
 return M

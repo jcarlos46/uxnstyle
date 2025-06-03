@@ -1,0 +1,11 @@
+-- write.tsu
+
+@write "io.write" 1 "VOID" ffi ret
+
+@space   [ 32 ] write ret
+@newline [ 10 ] write ret
+
+@main
+  "Hello," write space
+  "World" write newline
+halt

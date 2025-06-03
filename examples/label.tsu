@@ -1,11 +1,14 @@
 -- label.tsu
+@write "io.write" 1 "VOID" ffi ret
+@println write [10] write ret
+
 @label
   1 2 soma
 ret
 
 @main
-  label 3 + print
-  1 2 soma print
+  label 3 + println
+  1 2 soma println
 halt
 
 @soma + ret

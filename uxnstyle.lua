@@ -21,28 +21,21 @@ dict.NAMES["debug"] = debug
 
 local function jz()
     local label = stack:pop()
-    assert(LABELS[label] ~= nil, "JMP: label "..label.." not found")
     local cond  = stack:pop()
-    if cond == 0 then 
-        IP = LABELS[label]
-    end 
+    if cond == 0 then IP = label end 
 end
 dict.NAMES["jz"] = jz
 
 local function jnz()
     local label = stack:pop()
-    assert(LABELS[label] ~= nil, "JMP: label "..label.." not found")
     local cond  = stack:pop()
-    if cond ~= 0 then 
-        IP = LABELS[label]
-    end
+    if cond ~= 0 then IP = label end
 end
 dict.NAMES["jnz"] = jnz
 
 local function jmp()
     local label = stack:pop()
-    assert(LABELS[label] ~= nil, "JMP: label "..label.." not found")
-    IP = LABELS[label]
+    IP = label
 end
 dict.NAMES["jmp"] = jmp
 
@@ -75,21 +68,22 @@ local function import_file(filename)
     return content
 end
 
+
+
 local function eval(token)
     if token.ignore then
         if token.value == "while" then token.ignore = false end
-    elseif token.type == "NUMBER" or token.type == "QUOTE" then
+    elseif token.type == "NUMBER" then
         dict.stack:push(token.value)
     elseif token.type == "STRING" then
         local i = 1
         local list = {}
         while i <= #token.value do
             local c = token.value:sub(i, i)
-            c = string.byte(c)
+            c = dict.utf8decode(c)
             table.insert(list, c)
             i = i + 1
         end
-        table.insert(list, 0)
         dict.stack:push(list)
     elseif token.type == "LIST" then
         local list = {}
@@ -97,6 +91,9 @@ local function eval(token)
             table.insert(list, v.value)
         end
         dict.stack:push(list)
+    elseif token.type == "QUOTE" then
+        local token_ip = dict.LABELS[token.value]
+        dict.stack:push(token_ip)
     elseif token.type == "NAME" then
         if dict.LABELS[token.value] then
             table.insert(STASH, IP)
@@ -138,7 +135,9 @@ while IP <= #dict.TOKENS do
     local token = dict.TOKENS[IP]
     if dict.DEBUG then
         io.write("WS: ") dict.NAMES['ps']()
-        print(IP .. ":"..token.value.." line: "..token.line.." column: ".. token.column)
+        local value = token.value
+        if (token.type == "LIST") then value = "list" end
+        print(IP .. ":"..value.." line: "..token.line.." column: ".. token.column)
     end
     dict.LAST_TOKEN_NAME = token.value
     dict.LAST_TOKEN_LINE = token.line

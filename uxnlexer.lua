@@ -51,6 +51,8 @@ end
 function M.parse_list(token)
     assert(token.type == "LIST", "Token precisa ser do tipo LIST")
 
+    local line = token.line
+    local column = token.column
     local content = token.value
     local result = {}
 
@@ -60,32 +62,6 @@ function M.parse_list(token)
 
         if c:match("%s") then
             i = i + 1 -- Ignora espaços
-
-        elseif c == "\"" then
-            -- String
-            local str = ""
-            i = i + 1
-            while i <= #content do
-                local ch = content:sub(i, i)
-                if ch == "\"" then
-                    i = i + 1
-                    break
-                elseif ch == "\\" and i < #content then
-                    local next_ch = content:sub(i + 1, i + 1)
-                    if next_ch == "\"" or next_ch == "\\" then
-                        str = str .. next_ch
-                        i = i + 2
-                    else
-                        str = str .. ch
-                        i = i + 1
-                    end
-                else
-                    str = str .. ch
-                    i = i + 1
-                end
-            end
-            table.insert(result, return_token("STRING", str))
-
         else
             -- Nome ou número
             local token_str = ""
@@ -95,18 +71,11 @@ function M.parse_list(token)
             end
             if is_number(token_str) then
                 table.insert(result, return_token("NUMBER", tonumber(token_str)))
-            elseif is_label(token_str) then
-                token_str = token_str:sub(2) -- Remove o '@' do início'
-                table.insert(result, return_token("LABEL", token_str))
-            elseif is_name(token_str) then
-                table.insert(result, return_token("NAME", token_str))
-            else
-                table.insert(result, return_token("UNKNOWN", token_str))
             end
         end
     end
 
-    return { type = "LIST", value = result }
+    return return_token("LIST", result, line, column)
 end
 
 -- Função principal de tokenização
@@ -117,7 +86,6 @@ function M.tokenize(input)
     input = tostring(input)
 
     for line in input:gmatch("([^\n]*)\n?") do
-    --for line in input:gmatch("[^\n]+") do
         -- Processa comentários
         local _line = trim(line)
         local result_line = {}
@@ -172,7 +140,7 @@ function M.tokenize(input)
                     i = i + 1
                 end
                 column_count = column_count + 1
-                table.insert(result, return_token("LIST", list, line_count, column_count))
+                table.insert(result, M.parse_list(return_token("LIST", list, line_count, column_count)))
 
             elseif c == "\"" then
                 -- String entre aspas

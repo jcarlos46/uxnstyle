@@ -1,0 +1,13 @@
+-- memory.tsu
+1 1 store
+1 load
+2 + print
+
+@variable
+1 (variable) store
+(variable) load
+2 +  
+print
+halt
+
+@print "print" 1 "VOID" ffi ret

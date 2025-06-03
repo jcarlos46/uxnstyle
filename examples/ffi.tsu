@@ -1,20 +1,17 @@
 -- ffi
-@defines
-"VOID"   1 "print" "println" ffi
+@println"print" 1 "VOID" ffi ret
 
-"NUMBER" 1 "math.rad" "rad" ffi
-"NUMBER" 1 "math.sin" "sin" ffi
-"NUMBER" 1 "math.cos" "cos" ffi
-"NUMBER" 1 "math.tan" "tan" ffi
+@rad "math.rad" 1 "NUMBER" ffi ret
+@sin "math.sin" 1 "NUMBER" ffi ret
+@cos "math.cos" 1 "NUMBER" ffi ret
+@tan "math.tan" 1 "NUMBER" ffi ret
 
-"NUMBER" 1 "tonumber" "tonumber" ffi
-"STRING" 1 "type" "type?" ffi
-ret
+@tonumber "tonumber" 1 "NUMBER" ffi ret
+@type? "type" 1 "NUMBER" ffi ret
 
 @angulo 30 rad ret
 
 @main
-  defines
   angulo sin println
   angulo cos println
   angulo tan println

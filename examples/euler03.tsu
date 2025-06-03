@@ -1,19 +1,21 @@
+-- euler03.tsu
 600851475143 2          -- número alvo e fator inicial
-
 @loop
-	2over mod (not_factor) jnz 
-		dup print           -- imprime o fator encontrado
-		swap over / swap    -- divide o número pelo fator
-		(check_continue) jmp
+  2over mod (not_factor) jnz 
+    dup print           -- imprime o fator encontrado
+    swap over / swap    -- divide o número pelo fator
+    (check_continue) jmp
 
 @not_factor
-	1 +                   -- incrementa o fator
+  1 +                   -- incrementa o fator
 
 @check_continue
-	over 1 > (loop) jnz     -- continua se o número ainda for maior que 1
+  over 1 > (loop) jnz     -- continua se o número ainda for maior que 1
 
 halt
 
 @2over
-	over over            -- duplica os dois elementos do topo da pilha
+  over over            -- duplica os dois elementos do topo da pilha
 ret
+
+@print "print" 1 "VOID" ffi ret
