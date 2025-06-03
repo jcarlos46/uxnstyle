@@ -138,7 +138,23 @@ NAMES["<"] = lt
 local function eq()
     local a = stack:pop()
     local b = stack:pop()
-    if (b == a) then
+    
+    local function compare_lists(list1, list2)
+        if #list1 ~= #list2 then return false end
+        for i = 1, #list1 do
+            if list1[i] ~= list2[i] then return false end
+        end
+        return true
+    end
+    
+    local result = false
+    if type(a) == "table" and type(b) == "table" then
+        result = compare_lists(a, b)
+    else
+        result = (b == a)
+    end
+    
+    if result then
         M.stack:push(1)
     else
         M.stack:push(0)
