@@ -11,7 +11,7 @@ local function is_name(s)
 end
 
 local function is_label(s)
-    return s:match("^@") ~= nil
+    return type(s) == "string" and s:sub(-1) == ":"
 end
 
 local function trim(s)
@@ -184,7 +184,9 @@ function M.tokenize(input)
                         table.insert(result, return_token("NUMBER", tonumber(token), line_count, column_count))
                     elseif is_label(token) then
                         column_count = column_count + 1
-                        table.insert(result, return_token("LABEL", tostring(token), line_count, column_count))
+                        token = tostring(token)
+                        local token_str = token:gsub(":$", "") -- Remove o ':' do final
+                        table.insert(result, return_token("LABEL", token_str, line_count, column_count))
                     elseif is_name(token) then
                         column_count = column_count + 1
                         table.insert(result, return_token("NAME", tostring(token), line_count, column_count))

@@ -62,7 +62,7 @@ function Stack:tostring()
         elseif type(v) == "table" then
             result = result .. format_list(v)
         else
-            result = result .. string.format("%X", v)
+            result = result .. v
         end
     end
     return result .. "]"
@@ -365,6 +365,22 @@ NAMES["uncons"] = function() -- remove first element from list
     end
     stack:push(rest)
     stack:push(first)
+end
+
+NAMES["concat"] = function()
+    local list_b = stack:pop()
+     if type(list_b) ~= "table" then
+        print_error_type("LIST", type(list_b))
+    end
+    local list_a = stack:pop()
+     if type(list_a) ~= "table" then
+        print_error_type("LIST", type(list_a))
+    end
+    for i = 1, #list_b do
+        table.insert(list_a, list_b[i])
+    end
+
+    stack:push(list_a)
 end
 
 NAMES["empty?"] = function()

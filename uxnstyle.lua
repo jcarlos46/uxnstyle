@@ -13,6 +13,18 @@ local function ret()
 end
 dict.NAMES["ret"] = ret
 
+local function stash_in()
+    local a = stack:pop()
+    table.insert(STASH, a)
+end
+dict.NAMES['stash-in'] = stash_in
+
+local function stash_out()
+    local a = table.remove(STASH)
+    stack:push(a)
+end
+dict.NAMES['stash-out'] = stash_out
+
 local function halt() IP = #dict.TOKENS + 1 end
 dict.NAMES["halt"] = halt
 
@@ -68,8 +80,6 @@ local function import_file(filename)
     return content
 end
 
-
-
 local function eval(token)
     if token.ignore then
         if token.value == "while" then token.ignore = false end
@@ -124,8 +134,8 @@ dict.TOKENS = lexer.tokenize(code)
 -- Process labels
 for i, token in ipairs(dict.TOKENS) do
     if token.type == "LABEL" then
-        local token_str = token.value:sub(2) -- Remove o '@' do início'
-        dict.LABELS[token_str] = i
+        
+        dict.LABELS[token.value] = i
     end
 end
 
