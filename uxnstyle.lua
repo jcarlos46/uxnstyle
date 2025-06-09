@@ -95,7 +95,7 @@ local function eval(token)
             table.insert(list, v.value)
         end
         dict.stack:push(list)
-    elseif token.type == "QUOTE" then
+    elseif token.type == "POINTER" then
         local token_ip = dict.LABELS[token.value]
         if token_ip == nil then
             dict.print_error("LABEL not found: " .. token.value)
@@ -115,6 +115,17 @@ local function eval(token)
         else
             dict.print_error("NAME not found: " .. token.value)
         end
+    elseif token.type == "BLOCK" then
+        local block_ip = #dict.TOKENS
+        local tokens = lexer.tokenize(token.value)
+        for _, t in ipairs(tokens) do
+            local index = #dict.TOKENS + 1 
+            dict.TOKENS[index] = t
+        end
+        token.type = "NUMBER"
+        token.value = block_ip
+        dict.TOKENS[#dict.TOKENS + 1] = {type="NAME", value="ret"}
+        stack:push(block_ip)
     end
 end
 

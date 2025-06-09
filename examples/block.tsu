@@ -1,0 +1,14 @@
+-- block.tsu
+("FOO" print) 
+"HELLO" print 
+("BAR" print)
+call
+pop
+
+"FOO"
+0 (pop "BAR") when 
+print
+ps halt
+
+print: "print" 1 "VOID" ffi ret
+when: jnz ret

@@ -14,6 +14,10 @@ local function is_label(s)
     return type(s) == "string" and s:sub(-1) == ":"
 end
 
+local function is_pointer(s)
+    return type(s) == "string" and s:sub(1, 1) == "*" and #s > 1
+end
+
 local function trim(s)
     return s:match("^%s*(.-)%s*$")
 end
@@ -47,7 +51,7 @@ local function split_by_comment(str)
     return result
 end
 
--- Função para processar listas
+-- Função para processar listas (CORRIGIDA - APENAS NÚMEROS)
 function M.parse_list(token)
     assert(token.type == "LIST", "Token precisa ser do tipo LIST")
 
@@ -63,14 +67,17 @@ function M.parse_list(token)
         if c:match("%s") then
             i = i + 1 -- Ignora espaços
         else
-            -- Nome ou número
+            -- Processa apenas números
             local token_str = ""
-            while i <= #content and not content:sub(i, i):match("[%s\"]") do
+            -- CORREÇÃO: Incluir mais caracteres de parada para evitar loops infinitos
+            while i <= #content and not content:sub(i, i):match("[%s\"%[%]%(%)%*]") do
                 token_str = token_str .. content:sub(i, i)
                 i = i + 1
             end
-            if is_number(token_str) then
-                table.insert(result, return_token("NUMBER", tonumber(token_str)))
+            
+            -- Apenas aceita números - outros tokens são ignorados
+            if token_str ~= "" and is_number(token_str) then
+                table.insert(result, return_token("NUMBER", tonumber(token_str), line, column))
             end
         end
     end
@@ -83,6 +90,12 @@ function M.tokenize(input)
     local result = {}
     local line_count = 0
     local column_count = 0
+    
+    -- CORREÇÃO: Validação de entrada
+    if not input then
+        return result
+    end
+    
     input = tostring(input)
 
     for line in input:gmatch("([^\n]*)\n?") do
@@ -105,8 +118,8 @@ function M.tokenize(input)
             local c = line:sub(i, i)
 
             if c == "(" then
-                -- Agrupa tudo até o parêntese fechando como QUOTE
-                local quoted = ""
+                -- ALTERAÇÃO: QUOTE -> BLOCK - Agrupa tudo até o parêntese fechando como BLOCK
+                local block_content = ""
                 i = i + 1
                 while i <= #line do
                     local ch = line:sub(i, i)
@@ -115,10 +128,10 @@ function M.tokenize(input)
                         break
                     end
                     i = i + 1
-                    quoted = quoted .. ch
+                    block_content = block_content .. ch
                 end
                 column_count = column_count + 1
-                table.insert(result, return_token("QUOTE", quoted, line_count, column_count))
+                table.insert(result, return_token("BLOCK", block_content, line_count, column_count))
 
             elseif c == "[" then
                 -- Lista entre colchetes
@@ -172,7 +185,7 @@ function M.tokenize(input)
                 i = i + 1 -- Ignorar espaços
 
             else
-                -- Token padrão (número ou nome)
+                -- Token padrão (número, nome, label ou pointer)
                 local token = ""
                 while i <= #line and not line:sub(i, i):match("[%s%(%)%[%]\"]") do
                     token = token .. line:sub(i, i)
@@ -182,6 +195,11 @@ function M.tokenize(input)
                     if is_number(token) then
                         column_count = column_count + 1
                         table.insert(result, return_token("NUMBER", tonumber(token), line_count, column_count))
+                    elseif is_pointer(token) then
+                        -- NOVO: Suporte a POINTER
+                        column_count = column_count + 1
+                        local pointer_name = token:sub(2) -- Remove o '*' do início
+                        table.insert(result, return_token("POINTER", pointer_name, line_count, column_count))
                     elseif is_label(token) then
                         column_count = column_count + 1
                         token = tostring(token)

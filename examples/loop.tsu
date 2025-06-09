@@ -1,8 +1,9 @@
 -- loop.tsu
-1 @loop -- loop label
+1 
+loop: -- loop label
   dup print
   1 + 
-dup 10 > (loop) jz
+dup 10 > *loop jz
 halt
 
-@print "print" 1 "VOID" ffi ret
+print: "print" 1 "VOID" ffi ret
