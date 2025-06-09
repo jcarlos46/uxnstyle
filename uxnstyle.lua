@@ -51,18 +51,12 @@ local function jmp()
 end
 dict.NAMES["jmp"] = jmp
 
-local function apply()
-    local code = dict.stack:pop()
-    local last_IP = #dict.TOKENS
-    INCALL = true
-    local tokens = lexer.tokenize(code)
-    for _, t in ipairs(tokens) do
-        table.insert(dict.TOKENS, t)
-    end
-    table.insert(STASH, IP+1)
-    IP = last_IP
+local function call()
+    local new_ip = stack:pop()
+    table.insert(STASH, IP)
+    IP = new_ip
 end
-dict.NAMES["apply"] = apply
+dict.NAMES["call"] = call
 
 local function import_file(filename)
     local file, err = io.open(filename, "r")
@@ -103,6 +97,9 @@ local function eval(token)
         dict.stack:push(list)
     elseif token.type == "QUOTE" then
         local token_ip = dict.LABELS[token.value]
+        if token_ip == nil then
+            dict.print_error("LABEL not found: " .. token.value)
+        end
         dict.stack:push(token_ip)
     elseif token.type == "NAME" then
         if dict.LABELS[token.value] then
@@ -134,7 +131,6 @@ dict.TOKENS = lexer.tokenize(code)
 -- Process labels
 for i, token in ipairs(dict.TOKENS) do
     if token.type == "LABEL" then
-        
         dict.LABELS[token.value] = i
     end
 end

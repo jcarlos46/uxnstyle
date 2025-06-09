@@ -1,2 +1,7 @@
 -- hello.tsu
-"Hello, World!" print
+write: "io.write" 1 "VOID" ffi ret
+
+main:
+  "Hello, World!" write
+  [10] write -- newline
+  halt

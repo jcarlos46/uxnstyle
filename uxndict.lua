@@ -11,7 +11,7 @@ M.LAST_TOKEN_COLUMN = 0
 
 -- Print error
 function print_error(msg)
-    msg = M.LAST_TOKEN_NAME..": line "..M.LAST_TOKEN_LINE.." column "..M.LAST_TOKEN_COLUMN..": "..msg
+    msg = arg[1]..":"..M.LAST_TOKEN_LINE..":"..M.LAST_TOKEN_COLUMN.." "..M.LAST_TOKEN_NAME..": "..msg
     if CLI then print(msg)
     else error(msg) end
 end
@@ -189,8 +189,11 @@ local function div()
     M.stack:push(math.floor(a / b))
 end
 NAMES["/"] = div
+NAMES["div"] = div
 
-local function ps() print(stack:tostring()) end
+local function ps() 
+    print(stack:tostring())
+end
 NAMES["ps"] = ps
 
 local function debug() DEBUG=true end
@@ -314,7 +317,7 @@ local function ffi()
 
     local resolved_func = resolve_function(lua_func)
     if type(resolved_func) ~= "function" then
-        print_error(lua_func.. " is not a valid funciton")
+        print_error(lua_func.. " is not a valid function")
     end
 
     local args = {}
@@ -408,6 +411,17 @@ NAMES["load"] = function()
     if NAMES[index] == nil then print_error("Index "..index.." does not exist") return end
     stack:push(NAMES[index])
 end
+
+local function pick()
+    local index = stack:pop()
+    if type(index) ~= "number" then print_error_type("NUMBER", type(index)) end
+    local list = stack:pop()
+    if type(list) ~= "table" then print_error_type("LIST", type(index)) end
+    if list[index] ~= nil then print_error("index "..index.." was not found.") end
+    stack:push(list[index+1])
+    stack:push(list)
+end
+NAMES['pick'] = pick
 
 local function sleep()
     local seconds = stack:pop()

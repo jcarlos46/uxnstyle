@@ -1,0 +1,39 @@
+-- palindrome.tsu
+1992 palindrome? ps halt
+
+palindrome?: -- ( n -- bool )
+  dup 0 < (palindrome-false) jnz
+  digits dup reverse =
+  ret
+palindrome-false:
+  0 ret
+
+digits: -- ( n -- [d1 d2 ...] )
+  [] swap
+  digits-loop:
+    dup 0 = (digits-done) jnz
+    10 divmod stash-in
+    swap stash-out 
+	swap cons 
+	swap
+  (digits-loop) jmp
+digits-done:
+  pop ret
+
+divmod: -- ( a b -- (a/b) (a%b) )
+  over over
+  mod stash-in
+  div stash-out
+  ret
+
+reverse: -- ( list -- reversed-list )
+  [] swap
+  reverse-loop:
+    empty? (reverse-done) jnz
+    uncons stash-in
+    swap stash-out 
+	swap cons 
+	swap
+  (reverse-loop) jmp
+reverse-done:
+  pop ret

@@ -1,21 +1,21 @@
 -- ffi
-@println "print" 1 "VOID" ffi ret
+print: "print" 1 "VOID" ffi ret
 
-@rad "math.rad" 1 "NUMBER" ffi ret
-@sin "math.sin" 1 "NUMBER" ffi ret
-@cos "math.cos" 1 "NUMBER" ffi ret
-@tan "math.tan" 1 "NUMBER" ffi ret
+rad: "math.rad" 1 "NUMBER" ffi ret
+sin: "math.sin" 1 "NUMBER" ffi ret
+cos: "math.cos" 1 "NUMBER" ffi ret
+tan: "math.tan" 1 "NUMBER" ffi ret
 
-@tonumber "tonumber" 1 "NUMBER" ffi ret
-@type? "type" 1 "NUMBER" ffi ret
+tonumber: "tonumber" 1 "NUMBER" ffi ret
+type?: "type" 1 "NUMBER" ffi ret
 
-@angulo 30 rad ret
+angulo: 30 rad ret
 
-@main
-  angulo sin println
-  angulo cos println
-  angulo tan println
+main:
+  angulo sin print
+  angulo cos print
+  angulo tan print
 
-  "1" type? println
-  "1" tonumber type? println
+  "1" type? print
+  "1" tonumber type? print
 halt

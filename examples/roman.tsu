@@ -1,0 +1,122 @@
+-- roman.tsu
+main:
+  -- "III"  ps
+  --"LVIII" ps
+  "MCMXCIV" ps
+  [] swap
+  main-loop:
+    dup size 1 = (main-one-element) jnz
+    extract stash-in 
+    compress stash-out swap
+    roman-int
+    stash-in
+    dup (main-end-loop-zero) jz
+    swcons
+    swap stash-out 
+    swcons swap 
+    (main-end-loop) jmp
+  main-end-loop-zero:
+    pop stash-out 
+    swap stash-in
+    swcons stash-out
+  main-end-loop:
+    empty? (main-loop) jz
+main-done:
+  pop sum-list ps
+  halt
+main-one-element:
+  uncons swap pop
+  roman-int-body
+  swcons sum-list ps
+  halt
+  
+roman-int: -- ( [a b] -- x y )
+  dup [67 77] = (roman-int-cm) jnz -- CM - 900
+  dup [88 67] = (roman-int-xc) jnz -- XC - 90
+  dup [73 86] = (roman-int-iv) jnz -- IV - 4
+  extract
+  pop swap
+roman-int-body:
+  dup 77 = (roman-int-m) jnz
+  dup 67 = (roman-int-c) jnz
+  dup 76 = (roman-int-l) jnz
+  dup 86 = (roman-int-v) jnz
+  dup 73 = (roman-int-i) jnz
+roman-int-done:
+  ret
+
+roman-int-m:
+  pop 1000
+  (roman-int-done) jmp
+
+roman-int-c:
+  pop 100
+  (roman-int-done) jmp
+
+roman-int-l:
+  pop 50
+  (roman-int-done) jmp
+
+roman-int-v:
+  pop 5
+  (roman-int-done) jmp
+
+roman-int-i:
+  pop 1
+  (roman-int-done) jmp
+
+roman-int-cm:
+  extract 3pop 
+  0 900
+  (roman-int-done) jmp
+
+roman-int-xc:
+  extract 3pop 
+  0 90 
+  (roman-int-done) jmp
+
+roman-int-iv:
+  extract 3pop 
+  0 9 
+  (roman-int-done) jmp
+
+compress: -- ( a b -- [a b] )
+  [] cons cons
+  ret
+
+extract: -- ( lst -- a b tail )
+  uncons swap
+  uncons swap
+  ret
+
+3pop: -- ( a b c -- )
+  pop pop pop
+  ret
+
+swcons:
+  swap cons
+  ret
+
+size: -- ( list -- n )
+  0 -- accumulator
+  size-loop:
+    swap empty? (size-ret) jnz
+    uncons pop
+    swap 1 +
+    (size-loop) jmp 
+  size-ret:
+    pop
+    ret
+
+sum-list: -- ( lst -- int )
+  0 swap -- accumulator
+  
+  sum-list-loop:
+    dup size (sum-list-done) jz
+    uncons stash-in
+    swap stash-out +
+    swap
+  (sum-list-loop) jmp
+sum-list-done:
+  pop
+  ret

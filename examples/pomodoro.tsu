@@ -1,19 +1,19 @@
 -- pomodoro.tsu
 -- Pomodoro Timer Example
-@print "print" 1 "VOID" ffi ret
-@execute "os.execute" 1 "VOID" ffi ret
-@write "io.write" 1 "VOID" ffi ret
+print: "print" 1 "VOID" ffi ret
+execute: "os.execute" 1 "VOID" ffi ret
+write: "io.write" 1 "VOID" ffi ret
 
-@minutes 60 * ret
+minutes: 60 * ret
 
-@clean -- ( -- )
+clean: -- ( -- )
   [ 7 ] write
   "clear" execute
 ret
 
-@main -- ( -- )
+main: -- ( -- )
   "Pomodoro Timer Example" print
-  @pomodoro
+  pomodoro:
     clean
 	"Working time!" print
 	25 minutes sleep 
