@@ -1,4 +1,6 @@
 -- label.tsu
+*main jmp
+
 write: "io.write" 1 "VOID" ffi ret
 println: write [10] write ret
 

@@ -1,4 +1,6 @@
 -- block.tsu
+"stdlib.tsu" import
+
 ("FOO" print) 
 "HELLO" print 
 ("BAR" print)
@@ -12,17 +14,3 @@ print
 1 ("FOO") ("BAR") if
 print
 ps halt
-
-print: "print" 1 "VOID" ffi ret
-
-when: jnz ret
-
-if:
-  rot 0 =
-  *if-else jnz
-    pop call
-  ret
-  if-else:
-    swap pop
-	call
-  ret

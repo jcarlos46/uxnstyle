@@ -282,23 +282,23 @@ local function utf8encode(codepoint)
 end
 
 -- FFI
-local function ffi()
-    local function utf8fromlist(list)
-        local result = {}
-        for _, codepoint in ipairs(list) do
-            table.insert(result, utf8encode(codepoint))
-        end
-        return table.concat(result)
+local function utf8fromlist(list)
+    local result = {}
+    for _, codepoint in ipairs(list) do
+        table.insert(result, utf8encode(codepoint))
     end
+    return table.concat(result)
+end
 
+local function ffi()
     local return_type = M.stack:pop()
-    return_type = utf8fromlist(return_type)
+    return_type = M.utf8fromlist(return_type)
     
     local args_count = M.stack:pop()
     args_count = args_count
 
     local lua_func = M.stack:pop()
-    lua_func = utf8fromlist(lua_func)
+    lua_func = M.utf8fromlist(lua_func)
 
     -- Resolve a função Lua, incluindo namespaces
     local function resolve_function(path)
@@ -324,7 +324,7 @@ local function ffi()
     for i = 1, args_count do
         local arg = stack:pop()
         if type(arg) == "table" then
-            arg = utf8fromlist(arg)
+            arg = M.utf8fromlist(arg)
         end
         table.insert(args, arg)
     end
@@ -438,7 +438,9 @@ M.DEBUG = DEBUG
 M.LABELS = LABELS
 M.NAMES = NAMES
 M.stack = stack
+M.TOKENS = TOKENS
 M.utf8decode = utf8decode
+M.utf8fromlist = utf8fromlist
 M.print_error = print_error
 
 return M

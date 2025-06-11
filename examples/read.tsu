@@ -4,5 +4,5 @@ read ps print
 "BAR" print
 halt
 
-@print "print" 1 "VOID" ffi ret
-@read  "io.read" 0 "STRING" ffi ret
+print: "print" 1 "VOID" ffi ret
+read:  "io.read" 0 "STRING" ffi ret

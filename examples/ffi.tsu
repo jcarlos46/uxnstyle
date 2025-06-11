@@ -1,4 +1,6 @@
 -- ffi
+*main jmp -- jumping to entry point
+
 print: "print" 1 "VOID" ffi ret
 
 rad: "math.rad" 1 "NUMBER" ffi ret

@@ -4,9 +4,7 @@ local lexer = require("uxnlexer")
 local dict = require("uxndict")
 
 STASH = {}
-TOKENS = {}
 IP = 1
-INCALL = false
 
 local function ret()
     IP = table.remove(STASH)
@@ -25,7 +23,9 @@ local function stash_out()
 end
 dict.NAMES['stash-out'] = stash_out
 
-local function halt() IP = #dict.TOKENS + 1 end
+local function halt() 
+    IP = #dict.TOKENS + 1 
+end
 dict.NAMES["halt"] = halt
 
 local function debug() dict.DEBUG = true end
@@ -129,6 +129,21 @@ local function eval(token)
     end
 end
 
+local function import()
+    local file = dict.utf8fromlist(stack:pop())
+    local code = import_file(file)
+    local tokens = lexer.tokenize(code)
+    for _, t in ipairs(tokens) do
+        table.insert(dict.TOKENS, t)
+    end
+    for i, token in ipairs(dict.TOKENS) do
+        if token.type == "LABEL" then
+            dict.LABELS[token.value] = i
+        end
+    end
+end
+NAMES["import"] = import
+
 local code
 if arg[1] then
     local filename = arg[1]
@@ -146,8 +161,6 @@ for i, token in ipairs(dict.TOKENS) do
     end
 end
 
-
-if dict.LABELS["main"] then IP = dict.LABELS["main"] end
 while IP <= #dict.TOKENS do
     local token = dict.TOKENS[IP]
     if dict.DEBUG then
@@ -161,7 +174,10 @@ while IP <= #dict.TOKENS do
     dict.LAST_TOKEN_COLUMN = token.column
     eval(token)
     IP = IP + 1
-    if IP > #dict.TOKENS and INCALL then
-        IP = table.remove(STASH)
+    if IP > #dict.TOKENS then
+        local ip = table.remove(STASH)
+        if ip ~= nil then
+            IP = ip
+        end
     end
 end

@@ -1,0 +1,30 @@
+--stdlib.tsu
+halt -- prevent to interpret this file as actual code, only as library
+
+size: -- ( list -- n )
+  0 -- accumulator
+  size-loop:
+    swap empty? *size-ret jnz
+    uncons pop
+    swap 1 +
+    *size-loop jmp 
+  size-ret:
+    pop
+    ret
+
+when: jnz ret
+
+and: * ret
+or: + ret
+
+if:
+  rot 0 =
+  *if-else jnz
+    pop call
+  ret
+  if-else:
+    swap pop
+    call
+  ret
+
+print: "print" 1 "VOID" ffi ret

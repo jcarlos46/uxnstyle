@@ -1,5 +1,7 @@
 -- rule110.tsu
 -- This is a simple example of a Rule 110 cellular automaton simulation.
+"stdlib.tsu" import
+*main jmp
 
 write:
   "io.write" 1 "VOID" ffi ret
@@ -12,19 +14,15 @@ next-board:
 board-height:
 
 defines:
-  [] (next-board) store
-  0 (board-height) store
+  [] *next-board store
+  0 *board-height store
 ret
-
-print-char:
-  (print-char-1) jnz
-  "." ret
-  print-char-1: "#" ret
 
 print-board: -- ( board -- )
   print-board-loop: 
-    uncons print-char write
-  empty? (print-board-loop) jz 
+    uncons
+    (".") ("#") if write
+  empty? *print-board-loop jz 
   pop -- removing counter and empty list
   [10] write -- newline
 ret
@@ -48,25 +46,14 @@ padding-right: -- ( list -- 'list )
 ret
 
 next-gen: -- ( [a b c] -- i )
-  dup [0 0 0] = (ret-0) jnz
-  dup [1 1 1] = (ret-0) jnz
-  dup [1 0 0] = (ret-0) jnz
+  dup [0 0 0] = *ret-0 jnz
+  dup [1 1 1] = *ret-0 jnz
+  dup [1 0 0] = *ret-0 jnz
 --111	110	101	100	011	010	001	000
 -- 0	 1	 1	 0	 1	 1	 1	 0
   1 ret
 ret-0: 
   0 ret
-
-size: -- ( list -- n )
-  0 -- accumulator
-  size-loop:
-    swap empty? (size-ret) jnz
-    uncons pop
-    swap inc
-    (size-loop) jmp 
-  size-ret:
-    pop
-    ret
 
 main:
   defines
@@ -74,7 +61,7 @@ main:
   [1 0 1 0 0 0 0 0 0 0 0 0 1 0 1 0] concat
   [1 0 1 0 0 0 0 0 0 0 0 0 1 0 1 0] concat
   [1 0 1 0 0 0 0 0 0 0 0 0 1 0 1 0] concat dup
-  dup size dec (board-height) store -- defing max loop
+  dup size dec *board-height store -- defing max loop
   main-reset:
     print-board 
     padding-left padding-right
@@ -83,17 +70,17 @@ main:
       stash-in
       compress next-gen
       [] cons 
-      (next-board) load 
+      *next-board load 
       swap concat
-      (next-board) store
+      *next-board store
       uncons pop
       stash-out concat 
-    dup size 2 > (main-loop) jnz
+    dup size 2 > *main-loop jnz
     pop pop
-    (next-board) load dup
-    [] (next-board) store -- cleaning the next board
-    (board-height) load dup (main-halt) jz
-    dec (board-height) store
-  (main-reset) jmp
+    *next-board load dup
+    [] *next-board store -- cleaning the next board
+    *board-height load dup *main-halt jz
+    dec *board-height store
+  *main-reset jmp
 main-halt:
   halt

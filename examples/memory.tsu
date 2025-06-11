@@ -3,11 +3,11 @@
 1 load
 2 + print
 
-@variable
-1 (variable) store
-(variable) load
+variable: -- defining label just to get a pointer
+1 *variable store
+*variable load
 2 +  
 print
 halt
 
-@print "print" 1 "VOID" ffi ret
+print: "print" 1 "VOID" ffi ret

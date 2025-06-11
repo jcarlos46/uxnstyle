@@ -1,5 +1,5 @@
 -- palindrome.tsu
-1992 palindrome? ps halt
+1991 palindrome? ps halt
 
 palindrome?: -- ( n -- bool )
   dup 0 < (palindrome-false) jnz

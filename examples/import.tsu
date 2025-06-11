@@ -1,0 +1,12 @@
+"stdlib.tsu" import
+
+[ 1 2 3 ] size
+3 = ("FOO" print) when
+
+1 1 and
+("BAR") ("FOO") if
+print
+
+0 0 or 
+("FOO") ("FOOBAR") if
+print

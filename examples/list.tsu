@@ -1,7 +1,8 @@
 -- list.tsu
-@print "print" 1 "VOID" ffi ret
+"stdlib.tsu" import
+*main jmp
 
-@main
+main:
   [1 2 3] [1 2 3] =
   compare
   [2 3]   [1 2 3] =
@@ -10,15 +11,8 @@
   compare
 halt
 
-@compare 
-  dup (equal) jnz
-  dup (not-equal) jz
-  @equal
-    "Equal!" print
-    (continue) jmp
-  @not-equal
-    "Not equal!" print
-    (continue) jmp
-  @continue
-  pop
+compare:
+  ("EQUAL!")
+  ("NOT EQUAL!") if
+  print
 ret
