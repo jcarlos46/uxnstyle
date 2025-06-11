@@ -27,4 +27,43 @@ if:
     call
   ret
 
+dip:
+  swap stash-in
+  call
+  stash-out
+  ret
+
+fold: -- (list acc func -- result)
+  rot
+  fold-loop:
+    uncons swap stash-in
+	  swap dup dip
+	  stash-out
+  empty? ps *fold-loop jz
+  pop pop
+  ret
+
+filter:
+  [] rot rot swap
+  filter-loop: 
+    uncons swap stash-in 
+    swap (dup) dip 
+    dup dip  
+    (([] cons concat) (pop) if) dip
+    stash-out
+  empty? *filter-loop jz
+  pop pop
+  ret
+
+map:
+  [] rot rot swap 
+  map-loop:
+    uncons swap stash-in
+    swap dup dip 
+    ([] cons concat) dip
+    stash-out
+  empty? *map-loop jz
+  pop pop
+  ret
+
 print: "print" 1 "VOID" ffi ret

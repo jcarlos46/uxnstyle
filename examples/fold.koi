@@ -1,0 +1,17 @@
+-- fold.kai
+"stdlib.tsu" import
+
+[1 2 3] 0 (+) fold
+
+ps halt
+
+--fold
+fold: -- (list acc func -- result)
+  rot
+  fold-loop:
+    uncons swap stash-in
+	swap dup dip
+	stash-out
+  empty? ps *fold-loop jz
+  pop pop
+  ret

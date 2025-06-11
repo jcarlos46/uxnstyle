@@ -99,6 +99,11 @@ local function pop()
 end
 NAMES["pop"] = pop
 
+local function clear() 
+    stack.items = {}
+end
+NAMES["clear"] = clear
+
 local function dup()
     local a = M.stack:pop()
     M.stack:push(a)

@@ -118,21 +118,32 @@ function M.tokenize(input)
             local c = line:sub(i, i)
 
             if c == "(" then
-                -- ALTERAÇÃO: QUOTE -> BLOCK - Agrupa tudo até o parêntese fechando como BLOCK
+                -- Suporte a BLOCKs aninhados: conta parênteses
                 local block_content = ""
+                local depth = 1
                 i = i + 1
-                while i <= #line do
+                while i <= #line and depth > 0 do
                     local ch = line:sub(i, i)
-                    if ch == ")" then
+                    if ch == "(" then
+                        depth = depth + 1
+                        block_content = block_content .. ch
                         i = i + 1
-                        break
+                    elseif ch == ")" then
+                        depth = depth - 1
+                        if depth == 0 then
+                            i = i + 1
+                            break
+                        else
+                            block_content = block_content .. ch
+                            i = i + 1
+                        end
+                    else
+                        block_content = block_content .. ch
+                        i = i + 1
                     end
-                    i = i + 1
-                    block_content = block_content .. ch
                 end
                 column_count = column_count + 1
                 table.insert(result, return_token("BLOCK", block_content, line_count, column_count))
-
             elseif c == "[" then
                 -- Lista entre colchetes
                 local list = ""

@@ -1,0 +1,18 @@
+-- filter.koi
+"stdlib.tsu" import
+
+[1 2 3 4 5 6] (3 >) filter 
+ps halt
+
+filter:
+  [] rot rot swap
+  filter-loop: 
+    uncons 
+    swap stash-in 
+    swap (dup) dip 
+    dup dip  
+    (([] cons concat) (pop) if) dip
+    stash-out
+  empty? *filter-loop jz
+  pop pop
+  ret

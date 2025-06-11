@@ -1,0 +1,15 @@
+-- map.koi
+"stdlib.tsu" import
+[1 2 3] (2 +) map
+ps halt -- [3 4 5]
+
+map:
+  [] rot rot swap 
+  map-loop:
+    uncons swap stash-in
+    swap dup dip 
+    ([] cons concat) dip
+    stash-out
+  empty? *map-loop jz
+  pop pop
+  ret

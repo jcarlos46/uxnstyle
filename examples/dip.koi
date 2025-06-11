@@ -1,0 +1,14 @@
+
+-- dip.koi
+"stdlib.tsu" import
+
+1 2 3 (+) 
+dip -- [3][3]
+"FOOBAR" print
+
+clear
+
+"FOO" "BAR" 1 1 ((pop) (swap pop) if) dip
+(print) dip -- "FOO"
+
+ps halt -- [1]
