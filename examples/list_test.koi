@@ -1,0 +1,40 @@
+-- list_test.koi
+"stdlib.koi" import
+"listlib.koi" import
+
+2 3 min ps clear
+[2 3 4] (min) fold ps clear
+
+3 4 max ps clear
+[2 3 4] (max) fold ps clear
+
+-- max positive min negative
+[3 4 -1 1 -2 10] dup 
+(0 >) filter (max) fold
+swap
+(0 <) filter (min) fold
+ps  -- [10 -2]
+clear
+
+-- ExactMaches
+[1 2 3 4] -- guess
+[1 2 3 4] -- response
+(=) list
+(+) fold
+ps -- 4
+clear
+
+5 iota dup
+(2 *) map
+(+) list
+ps -- [3 6 9 12 15]
+
+clear
+
+5 iota
+(+) partial
+ps -- [1 3 6 10 15]
+
+clear
+
+halt

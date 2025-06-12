@@ -1,0 +1,185 @@
+-- listlib.koi
+"stdlib.koi" import
+halt
+
+fold: -- (list func -- result)
+  (uncons) dip rot 
+  empty? *fold-ret jnz
+  fold-loop:
+    uncons swap stash-in
+	  swap dup dip
+	  stash-out
+  empty? *fold-loop jz
+  fold-ret:
+    pop pop
+    ret
+
+filter:
+  [] rot rot swap
+  filter-loop: 
+    uncons swap stash-in 
+    swap (dup) dip 
+    dup dip  
+    (([] cons concat) (pop) if) dip
+    stash-out
+  empty? *filter-loop jz
+  pop pop
+  ret
+
+map:
+  [] rot rot swap 
+  map-loop:
+    uncons swap stash-in
+    swap dup dip 
+    ([] cons concat) dip
+    stash-out
+  empty? *map-loop jz
+  pop pop
+  ret
+
+size:
+  0
+  size-loop:
+    swap empty? *size-ret jnz
+    uncons pop
+    swap 1 + 
+  *size-loop jmp
+  size-ret:
+    pop
+    ret
+
+partial: -- [1 2 3] (+) partial
+  [] -- [1 2 3] (+) []
+  (swap) dip -- (+) [1 2 3] []
+  partial-loop:
+    over size over size -- (+) [1 2 3] [] 3 0
+    = *partial-post jnz
+    (dup) dip -- (+) [1 2 3] [1 2 3] []
+    dup size 1 + -- (+) [1 2 3] [1 2 3] [] 1
+    swap (take) dip 
+    cons -- (+) [1 2 3] [[1]]
+  *partial-loop jmp
+  partial-post:
+    swap pop
+    [] stash-in
+    partial-post-loop:
+      empty? *partial-ret jnz
+      swap  (uncons) dip
+      dup (fold) dip
+      swap stash-out
+      cons stash-in 
+      swap 
+    *partial-post-loop jmp
+  partial-ret:
+    pop pop 
+    stash-out
+    ret
+
+take: -- ( lst n -- 'lst )
+  [] stash-in
+  take-loop:
+    dup *take-ret jz
+	swap
+	empty? (0) (uncons) if
+	stash-out cons stash-in
+	swap -1 +
+  *take-loop jmp
+  take-ret:
+    pop pop 
+	  stash-out
+    revert
+    ret
+
+drop:
+  "drop: TODO" error
+  ret
+
+revert:
+  [] 
+  revert-loop:
+    stash-in
+    empty? *revert-ret jnz
+    uncons stash-out cons
+  *revert-loop jmp
+  revert-ret:
+    pop stash-out
+    ret
+
+l-empty:
+  empty? swap pop
+  ret
+
+list: -- ( lst lst func -- lst )
+  [] stash-in
+  list-loop:
+    (over l-empty over l-empty and) dip 
+    swap *list-ret jnz
+    stash-in 
+  --list-body           
+    uncons stash-in     
+    (uncons) dip        
+    swap stash-out      
+    stash-out dup       
+    (call) dip           
+    swap stash-out cons
+    stash-in           
+  *list-loop jmp
+  list-ret:
+    pop pop pop
+    stash-out revert
+    ret
+
+to-list: -- ( n -- list )
+  dup number? ([] cons) when
+  ret
+
+normalize: -- ( a b -- lstA lstB )
+  to-list swap to-list 
+  over size 
+  over size 
+  max 
+  dup rot swap 
+  take2 
+  (take2) dip
+  ret
+
+iota:
+  [] stash-in 
+  iota-loop:
+    dup *iota-ret jz
+    dup stash-out
+    cons stash-in
+    -1 + 
+  *iota-loop jmp
+  iota-ret:
+    pop stash-out
+    ret
+
+iota2:
+  "iota2: TODO" error
+  ret
+
+reshape: -- ( a b -- list )
+  [] stash-in
+  reshape-loop:
+    dup *reshape-ret jz
+    swap dup 
+    stash-out cons
+    stash-in swap
+    -1 +
+  *reshape-loop jmp
+  reshape-ret:
+    pop pop
+    stash-out
+    ret
+
+avg: -- ( list -- n )
+  dup
+  (+) fold
+  (size) dip
+  swap /
+  ret
+
+sort:
+  "sort: TODO" error
+  ret

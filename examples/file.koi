@@ -1,0 +1,14 @@
+-- file.koi
+".vscode/launch.json" loadfile
+print
+ps halt
+
+print: "print" 1 "VOID" ffi ret
+
+loadfile: -- ( filename -- content )
+  "local file = io.open('" swap concat
+  "')" concat
+  [10] concat
+  "return file:read('*all')" concat
+  loadcode
+  ret

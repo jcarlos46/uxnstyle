@@ -1,11 +1,12 @@
 -- write.tsu
+*main jmp
 
-@write "io.write" 1 "VOID" ffi ret
+write: "io.write" 1 "VOID" ffi ret
 
-@space   [ 32 ] write ret
-@newline [ 10 ] write ret
+space:   [ 32 ] write ret
+newline: [ 10 ] write ret
 
-@main
+main:
   "Hello," write space
   "World" write newline
 halt

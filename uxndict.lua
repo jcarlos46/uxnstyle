@@ -61,8 +61,10 @@ function Stack:tostring()
             result = result .. v
         elseif type(v) == "table" then
             result = result .. format_list(v)
-        else
+        elseif type(v) == "number" then
             result = result .. v
+        else
+            result = result .. type(v)
         end
     end
     return result .. "]"
@@ -75,10 +77,8 @@ function format_list(list)
         if i > 1 then result = result .. " " end
         if type(item) == "string" then
             result = result .. '"' .. item .. '"'
-        elseif type(item) == "table" and item.type == "list" then
+        elseif type(item) == "table" then
             result = result .. format_list(item)
-        elseif type(item) == "table" and item.type == "quote" then
-            result = result .. "[" .. table.concat(item.value, " ") .. "]"
         else
             result = result .. tostring(item)
         end
@@ -174,12 +174,13 @@ local function sub()
 end
 NAMES["sub"] = sub
 
-local function sum()
+local function mul()
     local b = M.stack:pop()
     local a = M.stack:pop()
     M.stack:push(a * b)
 end
-NAMES["*"] = sum
+NAMES["*"] = mul
+NAMES["mul"] = mul
 
 local function mod()
     local b = M.stack:pop()
@@ -295,6 +296,18 @@ local function utf8fromlist(list)
     return table.concat(result)
 end
 
+local function utf8tolist(str)
+    local i = 1
+    local list = {}
+    while i <= #str do
+        local c = str:sub(i, i)
+        c = utf8decode(c)
+        table.insert(list, c)
+        i = i + 1
+    end
+    return list
+end
+
 local function ffi()
     local return_type = M.stack:pop()
     return_type = M.utf8fromlist(return_type)
@@ -337,16 +350,36 @@ local function ffi()
     local unpack = table.unpack or unpack
     local result = resolved_func(unpack(args))
     if return_type ~= "VOID" then
+        if return_type == "STRING" then
+            result = utf8tolist(result)
+        end
         stack:push(result)
     end
 end
 NAMES["ffi"] = ffi
 
-local function read()
-    local a = io.read()
-    stack:push(a)
+local function open()
+    local filename = utf8fromlist(stack:pop())
+    local file, err = io.open(filename, 'r')
+    if not file then
+        print_error("Could not open file: " .. filename .. " (" .. (err or "unknown error") .. ")")
+    end
+
+    local content = file:read("*all")
+    file:close()
+
+    stack:push(content)
 end
-NAMES["read"] = read
+NAMES["open"] = open
+
+local function loadcode()
+    local code = utf8fromlist(stack:pop())
+    local l = load or loadstring
+    local f = l(code)
+    local r = f()
+    stack:push(r)
+end
+NAMES["loadcode"] = loadcode
 
 NAMES["cons"] = function() -- add element to front of list
     local list = stack:pop()
@@ -446,6 +479,7 @@ M.stack = stack
 M.TOKENS = TOKENS
 M.utf8decode = utf8decode
 M.utf8fromlist = utf8fromlist
+M.utf8tolist = utf8tolist
 M.print_error = print_error
 
 return M

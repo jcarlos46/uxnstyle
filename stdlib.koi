@@ -1,0 +1,45 @@
+--stdlib.tsu
+halt -- prevent to interpret this file as actual code, only as library
+
+when: jnz ret
+
+and: * ret
+or: + ret
+not:
+  0 = (1) (0) if
+  ret
+
+if:
+  rot 0 =
+  *if-else jnz
+    pop call
+  ret
+  if-else:
+    swap pop
+    call
+  ret
+
+dip:
+  swap stash-in
+  call
+  stash-out
+  ret
+
+max: -- ( a b -- n )
+  over over <
+  (swap) when
+  pop
+  ret
+
+min: -- ( a b -- n )
+  over over >
+  (swap) when
+  pop
+  ret
+
+print: "print" 1 "VOID" ffi ret
+error: "error" 1 "VOID" ffi ret
+type: "type" 1 "STRING" ffi ret
+
+list?: type "table" = ret
+number?: type "number" = ret

@@ -80,14 +80,7 @@ local function eval(token)
     elseif token.type == "NUMBER" then
         dict.stack:push(token.value)
     elseif token.type == "STRING" then
-        local i = 1
-        local list = {}
-        while i <= #token.value do
-            local c = token.value:sub(i, i)
-            c = dict.utf8decode(c)
-            table.insert(list, c)
-            i = i + 1
-        end
+        local list = dict.utf8tolist(token.value)
         dict.stack:push(list)
     elseif token.type == "LIST" then
         local list = {}
